@@ -30,6 +30,7 @@
     {"name": "mostrarRotulos", "value": true},
     {"name": "tamanhoRotulo",  "value": 9},
     {"name": "fontePadrao",    "value": "Segoe UI, sans-serif"},
+    {"name": "alturaHeader",   "value": 44},
 
     {
       "name": "modoAcumulado",
@@ -130,7 +131,7 @@
       "name": "yscale",
       "type": "linear",
       "domain": {"data": "bars", "field": "valor"},
-      "range": "height",
+      "range": [{"signal": "height"}, {"signal": "alturaHeader"}],
       "nice": true,
       "zero": true
     },
@@ -197,7 +198,7 @@
       "encode": {
         "enter": {
           "x":      {"signal": "width - 162"},
-          "y":      {"value": -34},
+          "y":      {"value": 8},
           "width":  {"value": 157},
           "height": {"value": 24},
           "clip":   {"value": false}

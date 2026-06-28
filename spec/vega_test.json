@@ -3,7 +3,7 @@
   "description": "Gráfico de Colunas Agrupadas Dinâmicas — Planejado / Realizado / Projetado. Toggle Mensal / Acumulado interno. Testável em https://vega.github.io/editor/",
   "width": 820,
   "height": 360,
-  "padding": {"left": 10, "right": 10, "top": 38, "bottom": 20},
+  "padding": {"left": 10, "right": 10, "top": 20, "bottom": 20},
   "autosize": {"type": "fit", "contains": "padding"},
 
   "config": {
@@ -50,6 +50,7 @@
     {"name": "mostrarRotulos", "value": true},
     {"name": "tamanhoRotulo",  "value": 9},
     {"name": "fontePadrao",    "value": "Segoe UI, sans-serif"},
+    {"name": "alturaHeader",   "value": 44},
 
     {
       "name": "modoAcumulado",
@@ -172,10 +173,10 @@
     },
     {
       "name": "yscale",
-      "description": "Escala linear que adapta automaticamente ao range dos valores (mensal ou acumulado).",
+      "description": "Escala linear que adapta automaticamente ao range dos valores (mensal ou acumulado). Range começa em alturaHeader para reservar faixa do toggle no topo.",
       "type": "linear",
       "domain": {"data": "bars", "field": "valor"},
-      "range": "height",
+      "range": [{"signal": "height"}, {"signal": "alturaHeader"}],
       "nice": true,
       "zero": true
     },
@@ -238,11 +239,11 @@
   "marks": [
     {
       "type": "group",
-      "description": "Toggle Mensal / Acumulado — posicionado na área de padding superior (y negativo). Cliques atualizam o signal modoAcumulado.",
+      "description": "Toggle Mensal / Acumulado — posicionado na faixa superior reservada (alturaHeader). Cliques atualizam o signal modoAcumulado.",
       "encode": {
         "enter": {
           "x":      {"signal": "width - 162"},
-          "y":      {"value": -34},
+          "y":      {"value": 8},
           "width":  {"value": 157},
           "height": {"value": 24},
           "clip":   {"value": false}
