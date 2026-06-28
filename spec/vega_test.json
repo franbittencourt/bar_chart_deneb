@@ -1,0 +1,322 @@
+{
+  "$schema": "https://vega.github.io/schema/vega/v5.json",
+  "description": "Gráfico de Colunas Agrupadas Dinâmicas — Planejado / Realizado / Projetado. Cada mês exibe exatamente duas barras, sem espaços reservados para medidas nulas. Testável no editor online: https://vega.github.io/editor/",
+  "width": 820,
+  "height": 360,
+  "padding": {"left": 10, "right": 10, "top": 30, "bottom": 20},
+  "autosize": {"type": "fit", "contains": "padding"},
+
+  "config": {
+    "locale": {
+      "number": {
+        "decimal": ",",
+        "thousands": ".",
+        "grouping": [3],
+        "currency": ["R$ ", ""]
+      }
+    }
+  },
+
+  "signals": [
+    {
+      "name": "campoMes",
+      "value": "Ano_Mes_abrev",
+      "description": "Nome do campo de mês no dataset. Altere para o nome exato usado no Deneb."
+    },
+    {
+      "name": "campoPlan",
+      "value": "m_Plan",
+      "description": "Nome da medida Planejado no dataset."
+    },
+    {
+      "name": "campoReal",
+      "value": "m_Real",
+      "description": "Nome da medida Realizado no dataset."
+    },
+    {
+      "name": "campoProj",
+      "value": "m_Proj",
+      "description": "Nome da medida Projetado no dataset."
+    },
+    {
+      "name": "labelPlan",
+      "value": "Planejado",
+      "description": "Texto exibido na legenda e tooltip para a série Planejado."
+    },
+    {
+      "name": "labelReal",
+      "value": "Realizado",
+      "description": "Texto exibido na legenda e tooltip para a série Realizado."
+    },
+    {
+      "name": "labelProj",
+      "value": "Projetado",
+      "description": "Texto exibido na legenda e tooltip para a série Projetado."
+    },
+    {
+      "name": "corPlan",
+      "value": "#4472C4",
+      "description": "Cor da barra Planejado (azul padrão)."
+    },
+    {
+      "name": "corReal",
+      "value": "#70AD47",
+      "description": "Cor da barra Realizado (verde padrão)."
+    },
+    {
+      "name": "corProj",
+      "value": "#ED7D31",
+      "description": "Cor da barra Projetado (laranja padrão)."
+    },
+    {
+      "name": "paddingGrupo",
+      "value": 0.3,
+      "description": "Espaçamento proporcional entre grupos de meses (0 a 1)."
+    },
+    {
+      "name": "paddingBarra",
+      "value": 0.12,
+      "description": "Espaçamento proporcional entre as duas barras dentro de cada mês (0 a 1)."
+    },
+    {
+      "name": "raioAresta",
+      "value": 3,
+      "description": "Raio de arredondamento do topo das barras (px)."
+    },
+    {
+      "name": "mostrarRotulos",
+      "value": true,
+      "description": "true = exibe rótulos de valor acima de cada barra; false = apenas tooltip."
+    },
+    {
+      "name": "tamanhoRotulo",
+      "value": 9,
+      "description": "Tamanho da fonte dos rótulos de valor (px)."
+    },
+    {
+      "name": "fontePadrao",
+      "value": "Segoe UI, sans-serif"
+    }
+  ],
+
+  "data": [
+    {
+      "name": "source",
+      "description": "Dataset de teste com 12 meses. No Deneb, este bloco é removido e o nome 'source' é trocado por 'dataset' nos demais datasets.",
+      "values": [
+        {"Ano_Mes_abrev": "Jan/25", "m_Plan": 850000, "m_Real": 812000, "m_Proj": null},
+        {"Ano_Mes_abrev": "Fev/25", "m_Plan": 850000, "m_Real": 896000, "m_Proj": null},
+        {"Ano_Mes_abrev": "Mar/25", "m_Plan": 850000, "m_Real": 923000, "m_Proj": null},
+        {"Ano_Mes_abrev": "Abr/25", "m_Plan": 850000, "m_Real": 788000, "m_Proj": null},
+        {"Ano_Mes_abrev": "Mai/25", "m_Plan": 850000, "m_Real": 865000, "m_Proj": null},
+        {"Ano_Mes_abrev": "Jun/25", "m_Plan": 850000, "m_Real": 831000, "m_Proj": null},
+        {"Ano_Mes_abrev": "Jul/25", "m_Plan": 850000, "m_Real": null,   "m_Proj": 917000},
+        {"Ano_Mes_abrev": "Ago/25", "m_Plan": 850000, "m_Real": null,   "m_Proj": 882000},
+        {"Ano_Mes_abrev": "Set/25", "m_Plan": 850000, "m_Real": null,   "m_Proj": 940000},
+        {"Ano_Mes_abrev": "Out/25", "m_Plan": 850000, "m_Real": null,   "m_Proj": 955000},
+        {"Ano_Mes_abrev": "Nov/25", "m_Plan": 850000, "m_Real": null,   "m_Proj": 970000},
+        {"Ano_Mes_abrev": "Dez/25", "m_Plan": 850000, "m_Real": null,   "m_Proj": 1020000}
+      ]
+    },
+    {
+      "name": "proc",
+      "description": "Normaliza os nomes dos campos usando os sinais acima. Qualquer alteração de campo no Power BI precisa ser feita apenas nos signals, não aqui.",
+      "source": "source",
+      "transform": [
+        {"type": "formula", "as": "_mes",  "expr": "datum[campoMes]"},
+        {"type": "formula", "as": "_plan", "expr": "datum[campoPlan]"},
+        {"type": "formula", "as": "_real", "expr": "datum[campoReal]"},
+        {"type": "formula", "as": "_proj", "expr": "datum[campoProj]"}
+      ]
+    },
+    {
+      "name": "bars_plan",
+      "description": "Barra Planejado: sempre presente em todo mês. Ocupa a posição interna 0 (esquerda) dentro do grupo.",
+      "source": "proc",
+      "transform": [
+        {"type": "formula", "as": "serie", "expr": "labelPlan"},
+        {"type": "formula", "as": "valor", "expr": "datum._plan"},
+        {"type": "formula", "as": "ordem", "expr": "0"}
+      ]
+    },
+    {
+      "name": "bars_real",
+      "description": "Barra Realizado: filtrada — só existe nos meses em que m_Real não é nulo (antes/no mês de referência). Ocupa a posição interna 1 (direita).",
+      "source": "proc",
+      "transform": [
+        {"type": "filter",  "expr": "isValid(datum._real) && datum._real !== null"},
+        {"type": "formula", "as": "serie", "expr": "labelReal"},
+        {"type": "formula", "as": "valor", "expr": "datum._real"},
+        {"type": "formula", "as": "ordem", "expr": "1"}
+      ]
+    },
+    {
+      "name": "bars_proj",
+      "description": "Barra Projetado: filtrada — só existe nos meses em que m_Proj não é nulo (após o mês de referência). Ocupa a posição interna 1 (direita), sem conflito com Realizado.",
+      "source": "proc",
+      "transform": [
+        {"type": "filter",  "expr": "isValid(datum._proj) && datum._proj !== null"},
+        {"type": "formula", "as": "serie", "expr": "labelProj"},
+        {"type": "formula", "as": "valor", "expr": "datum._proj"},
+        {"type": "formula", "as": "ordem", "expr": "1"}
+      ]
+    },
+    {
+      "name": "bars",
+      "description": "Formato longo final: união das três séries filtradas. Cada mês tem exatamente 2 entradas. Nenhum espaço reservado para nulos.",
+      "source": ["bars_plan", "bars_real", "bars_proj"]
+    }
+  ],
+
+  "scales": [
+    {
+      "name": "xscale",
+      "description": "Escala de banda externa: posiciona cada grupo (mês) no eixo X. Ordem preservada do dataset original.",
+      "type": "band",
+      "domain": {"data": "bars_plan", "field": "_mes"},
+      "range": "width",
+      "padding": {"signal": "paddingGrupo"}
+    },
+    {
+      "name": "xinner",
+      "description": "Escala de banda interna: posiciona as duas barras (ordem 0 e 1) dentro da largura de cada grupo. Range dinâmico via bandwidth('xscale').",
+      "type": "band",
+      "domain": [0, 1],
+      "range": {"signal": "[0, bandwidth('xscale')]"},
+      "padding": {"signal": "paddingBarra"}
+    },
+    {
+      "name": "yscale",
+      "type": "linear",
+      "domain": {"data": "bars", "field": "valor"},
+      "range": "height",
+      "nice": true,
+      "zero": true
+    },
+    {
+      "name": "color",
+      "description": "Escala de cor ordinal com as 3 séries fixas na legenda, independentemente de quais séries aparecem em cada mês.",
+      "type": "ordinal",
+      "domain": {"signal": "[labelPlan, labelReal, labelProj]"},
+      "range": {"signal": "[corPlan, corReal, corProj]"}
+    }
+  ],
+
+  "axes": [
+    {
+      "orient": "bottom",
+      "scale": "xscale",
+      "domain": false,
+      "ticks": false,
+      "labelPadding": 10,
+      "labelFont": "Segoe UI, sans-serif",
+      "labelFontSize": 11,
+      "labelColor": "#404040",
+      "labelAngle": -35,
+      "labelAlign": "right",
+      "labelBaseline": "middle",
+      "labelOverlap": false
+    },
+    {
+      "orient": "left",
+      "scale": "yscale",
+      "domain": false,
+      "ticks": false,
+      "tickCount": 5,
+      "grid": true,
+      "gridColor": "#e8e8e8",
+      "gridOpacity": 1,
+      "labelFont": "Segoe UI, sans-serif",
+      "labelFontSize": 11,
+      "labelColor": "#666666",
+      "format": "$,.0f",
+      "labelOverlap": "greedy"
+    }
+  ],
+
+  "legends": [
+    {
+      "fill": "color",
+      "orient": "bottom",
+      "direction": "horizontal",
+      "padding": 12,
+      "columnPadding": 24,
+      "symbolType": "square",
+      "symbolSize": 120,
+      "symbolStrokeWidth": 0,
+      "labelFont": "Segoe UI, sans-serif",
+      "labelFontSize": 12,
+      "labelColor": "#404040"
+    }
+  ],
+
+  "marks": [
+    {
+      "type": "group",
+      "description": "Grupo de marcas por mês (facet). Cada grupo recebe exatamente 2 barras do dataset 'bars'.",
+      "from": {
+        "facet": {
+          "data": "bars",
+          "name": "bars_por_mes",
+          "groupby": "_mes"
+        }
+      },
+      "encode": {
+        "enter": {
+          "x":      {"scale": "xscale", "field": "_mes"},
+          "width":  {"signal": "bandwidth('xscale')"},
+          "height": {"signal": "height"},
+          "clip":   {"value": false}
+        }
+      },
+      "marks": [
+        {
+          "type": "rect",
+          "name": "barra",
+          "description": "Barra individual. A posição X usa a escala interna (xinner) com o campo 'ordem' (0 ou 1). Nunca reserva espaço para valores nulos.",
+          "from": {"data": "bars_por_mes"},
+          "encode": {
+            "enter": {
+              "x":                    {"scale": "xinner", "field": "ordem"},
+              "width":                {"signal": "bandwidth('xinner')"},
+              "y":                    {"scale": "yscale", "field": "valor"},
+              "y2":                   {"scale": "yscale", "value": 0},
+              "fill":                 {"scale": "color",  "field": "serie"},
+              "cornerRadiusTopLeft":  {"signal": "raioAresta"},
+              "cornerRadiusTopRight": {"signal": "raioAresta"},
+              "tooltip": {
+                "signal": "{'Mês': datum._mes, 'Tipo': datum.serie, 'Valor': format(datum.valor, '$,.0f')}"
+              }
+            },
+            "update": {
+              "fillOpacity": {"value": 1}
+            },
+            "hover": {
+              "fillOpacity": {"value": 0.7},
+              "cursor":      {"value": "pointer"}
+            }
+          }
+        },
+        {
+          "type": "text",
+          "name": "rotulo",
+          "description": "Rótulo de valor acima da barra. Controlado pelo signal 'mostrarRotulos'. Centralizado na barra usando bandwidth('xinner').",
+          "from": {"data": "bars_por_mes"},
+          "encode": {
+            "enter": {
+              "x":        {"signal": "scale('xinner', datum.ordem) + bandwidth('xinner') / 2"},
+              "y":        {"scale": "yscale", "field": "valor", "offset": -5},
+              "align":    {"value": "center"},
+              "baseline": {"value": "bottom"},
+              "font":     {"value": "Segoe UI, sans-serif"},
+              "fontSize": {"signal": "tamanhoRotulo"},
+              "fontWeight": {"value": "600"},
+              "fill":     {"value": "#404040"},
+              "text":     {"signal": "mostrarRotulos ? 'R$' + format(datum.valor / 1000, ',.0f') + 'K' : ''"}
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
