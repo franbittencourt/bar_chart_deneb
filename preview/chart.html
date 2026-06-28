@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Preview — Colunas Agrupadas Dinâmicas (Deneb / Vega)</title>
+  <script src="https://cdn.jsdelivr.net/npm/vega@5/build/vega.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "Segoe UI", sans-serif;
+      background: #f4f6f9;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 32px 16px;
+    }
+    h1 {
+      font-size: 18px;
+      font-weight: 600;
+      color: #1a1a2e;
+      margin-bottom: 6px;
+      text-align: center;
+    }
+    p.subtitle {
+      font-size: 13px;
+      color: #666;
+      margin-bottom: 28px;
+      text-align: center;
+    }
+    #chart-container {
+      background: #ffffff;
+      border-radius: 8px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.10);
+      padding: 24px 24px 16px 24px;
+      width: 820px;
+      max-width: 100%;
+    }
+    #view { width: 100%; }
+  </style>
+</head>
+<body>
+  <h1>Gráfico de Colunas Agrupadas Dinâmicas</h1>
+  <p class="subtitle">Vega · Deneb · Power BI &nbsp;|&nbsp; Cada mês exibe exatamente duas barras, sem espaços para medidas nulas</p>
+  <div id="chart-container">
+    <div id="view"></div>
+  </div>
+
+  <script>
+    const spec = {
+      "$schema": "https://vega.github.io/schema/vega/v5.json",
+      "width": 760,
+      "height": 360,
+      "padding": {"left": 10, "right": 10, "top": 30, "bottom": 10},
+      "autosize": {"type": "fit", "contains": "padding"},
+
+      "config": {
+        "locale": {
+          "number": {
+            "decimal": ",",
+            "thousands": ".",
+            "grouping": [3],
+            "currency": ["R$ ", ""]
+          }
+        }
+      },
+
+      "signals": [
+        {"name": "campoMes",       "value": "Ano_Mes_abrev"},
+        {"name": "campoPlan",      "value": "m_Plan"},
+        {"name": "campoReal",      "value": "m_Real"},
+        {"name": "campoProj",      "value": "m_Proj"},
+        {"name": "labelPlan",      "value": "Planejado"},
+        {"name": "labelReal",      "value": "Realizado"},
+        {"name": "labelProj",      "value": "Projetado"},
+        {"name": "corPlan",        "value": "#4472C4"},
+        {"name": "corReal",        "value": "#70AD47"},
+        {"name": "corProj",        "value": "#ED7D31"},
+        {"name": "paddingGrupo",   "value": 0.3},
+        {"name": "paddingBarra",   "value": 0.12},
+        {"name": "raioAresta",     "value": 3},
+        {"name": "mostrarRotulos", "value": true},
+        {"name": "tamanhoRotulo",  "value": 9},
+        {"name": "fontePadrao",    "value": "Segoe UI, sans-serif"}
+      ],
+
+      "data": [
+        {
+          "name": "source",
+          "values": [
+            {"Ano_Mes_abrev": "Jan/25", "m_Plan": 850000, "m_Real": 812000, "m_Proj": null},
+            {"Ano_Mes_abrev": "Fev/25", "m_Plan": 850000, "m_Real": 896000, "m_Proj": null},
+            {"Ano_Mes_abrev": "Mar/25", "m_Plan": 850000, "m_Real": 923000, "m_Proj": null},
+            {"Ano_Mes_abrev": "Abr/25", "m_Plan": 850000, "m_Real": 788000, "m_Proj": null},
+            {"Ano_Mes_abrev": "Mai/25", "m_Plan": 850000, "m_Real": 865000, "m_Proj": null},
+            {"Ano_Mes_abrev": "Jun/25", "m_Plan": 850000, "m_Real": 831000, "m_Proj": null},
+            {"Ano_Mes_abrev": "Jul/25", "m_Plan": 850000, "m_Real": null,   "m_Proj": 917000},
+            {"Ano_Mes_abrev": "Ago/25", "m_Plan": 850000, "m_Real": null,   "m_Proj": 882000},
+            {"Ano_Mes_abrev": "Set/25", "m_Plan": 850000, "m_Real": null,   "m_Proj": 940000},
+            {"Ano_Mes_abrev": "Out/25", "m_Plan": 850000, "m_Real": null,   "m_Proj": 955000},
+            {"Ano_Mes_abrev": "Nov/25", "m_Plan": 850000, "m_Real": null,   "m_Proj": 970000},
+            {"Ano_Mes_abrev": "Dez/25", "m_Plan": 850000, "m_Real": null,   "m_Proj": 1020000}
+          ]
+        },
+        {
+          "name": "proc",
+          "source": "source",
+          "transform": [
+            {"type": "formula", "as": "_mes",  "expr": "datum[campoMes]"},
+            {"type": "formula", "as": "_plan", "expr": "datum[campoPlan]"},
+            {"type": "formula", "as": "_real", "expr": "datum[campoReal]"},
+            {"type": "formula", "as": "_proj", "expr": "datum[campoProj]"}
+          ]
+        },
+        {
+          "name": "bars_plan",
+          "source": "proc",
+          "transform": [
+            {"type": "formula", "as": "serie", "expr": "labelPlan"},
+            {"type": "formula", "as": "valor", "expr": "datum._plan"},
+            {"type": "formula", "as": "ordem", "expr": "0"}
+          ]
+        },
+        {
+          "name": "bars_real",
+          "source": "proc",
+          "transform": [
+            {"type": "filter",  "expr": "isValid(datum._real) && datum._real !== null"},
+            {"type": "formula", "as": "serie", "expr": "labelReal"},
+            {"type": "formula", "as": "valor", "expr": "datum._real"},
+            {"type": "formula", "as": "ordem", "expr": "1"}
+          ]
+        },
+        {
+          "name": "bars_proj",
+          "source": "proc",
+          "transform": [
+            {"type": "filter",  "expr": "isValid(datum._proj) && datum._proj !== null"},
+            {"type": "formula", "as": "serie", "expr": "labelProj"},
+            {"type": "formula", "as": "valor", "expr": "datum._proj"},
+            {"type": "formula", "as": "ordem", "expr": "1"}
+          ]
+        },
+        {
+          "name": "bars",
+          "source": ["bars_plan", "bars_real", "bars_proj"]
+        }
+      ],
+
+      "scales": [
+        {
+          "name": "xscale",
+          "type": "band",
+          "domain": {"data": "bars_plan", "field": "_mes"},
+          "range": "width",
+          "padding": {"signal": "paddingGrupo"}
+        },
+        {
+          "name": "xinner",
+          "type": "band",
+          "domain": [0, 1],
+          "range": {"signal": "[0, bandwidth('xscale')]"},
+          "padding": {"signal": "paddingBarra"}
+        },
+        {
+          "name": "yscale",
+          "type": "linear",
+          "domain": {"data": "bars", "field": "valor"},
+          "range": "height",
+          "nice": true,
+          "zero": true
+        },
+        {
+          "name": "color",
+          "type": "ordinal",
+          "domain": {"signal": "[labelPlan, labelReal, labelProj]"},
+          "range": {"signal": "[corPlan, corReal, corProj]"}
+        }
+      ],
+
+      "axes": [
+        {
+          "orient": "bottom",
+          "scale": "xscale",
+          "domain": false,
+          "ticks": false,
+          "labelPadding": 10,
+          "labelFont": "Segoe UI, sans-serif",
+          "labelFontSize": 11,
+          "labelColor": "#404040",
+          "labelAngle": -35,
+          "labelAlign": "right",
+          "labelBaseline": "middle",
+          "labelOverlap": false
+        },
+        {
+          "orient": "left",
+          "scale": "yscale",
+          "domain": false,
+          "ticks": false,
+          "tickCount": 5,
+          "grid": true,
+          "gridColor": "#e8e8e8",
+          "labelFont": "Segoe UI, sans-serif",
+          "labelFontSize": 11,
+          "labelColor": "#666666",
+          "format": "$,.0f",
+          "labelOverlap": "greedy"
+        }
+      ],
+
+      "legends": [
+        {
+          "fill": "color",
+          "orient": "bottom",
+          "direction": "horizontal",
+          "padding": 12,
+          "columnPadding": 24,
+          "symbolType": "square",
+          "symbolSize": 120,
+          "symbolStrokeWidth": 0,
+          "labelFont": "Segoe UI, sans-serif",
+          "labelFontSize": 12,
+          "labelColor": "#404040"
+        }
+      ],
+
+      "marks": [
+        {
+          "type": "group",
+          "from": {
+            "facet": {
+              "data": "bars",
+              "name": "bars_por_mes",
+              "groupby": "_mes"
+            }
+          },
+          "encode": {
+            "enter": {
+              "x":     {"scale": "xscale", "field": "_mes"},
+              "width": {"signal": "bandwidth('xscale')"},
+              "height":{"signal": "height"},
+              "clip":  {"value": false}
+            }
+          },
+          "marks": [
+            {
+              "type": "rect",
+              "name": "barra",
+              "from": {"data": "bars_por_mes"},
+              "encode": {
+                "enter": {
+                  "x":                    {"scale": "xinner", "field": "ordem"},
+                  "width":                {"signal": "bandwidth('xinner')"},
+                  "y":                    {"scale": "yscale", "field": "valor"},
+                  "y2":                   {"scale": "yscale", "value": 0},
+                  "fill":                 {"scale": "color",  "field": "serie"},
+                  "cornerRadiusTopLeft":  {"signal": "raioAresta"},
+                  "cornerRadiusTopRight": {"signal": "raioAresta"},
+                  "tooltip": {
+                    "signal": "{'Mês': datum._mes, 'Tipo': datum.serie, 'Valor': format(datum.valor, '$,.0f')}"
+                  }
+                },
+                "update": {"fillOpacity": {"value": 1}},
+                "hover":  {"fillOpacity": {"value": 0.7}, "cursor": {"value": "pointer"}}
+              }
+            },
+            {
+              "type": "text",
+              "from": {"data": "bars_por_mes"},
+              "encode": {
+                "enter": {
+                  "x":          {"signal": "scale('xinner', datum.ordem) + bandwidth('xinner') / 2"},
+                  "y":          {"scale": "yscale", "field": "valor", "offset": -5},
+                  "align":      {"value": "center"},
+                  "baseline":   {"value": "bottom"},
+                  "font":       {"value": "Segoe UI, sans-serif"},
+                  "fontSize":   {"signal": "tamanhoRotulo"},
+                  "fontWeight": {"value": "600"},
+                  "fill":       {"value": "#404040"},
+                  "text":       {"signal": "mostrarRotulos ? 'R$' + format(datum.valor / 1000, ',.0f') + 'K' : ''"}
+                }
+              }
+            }
+          ]
+        }
+      ]
+    };
+
+    new vega.View(vega.parse(spec), {
+      renderer: 'canvas',
+      container: '#view',
+      hover: true
+    }).run();
+  </script>
+</body>
+</html>

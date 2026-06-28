@@ -1,0 +1,281 @@
+{
+  "$schema": "https://vega.github.io/schema/vega/v5.json",
+  "description": "Gráfico de Colunas Agrupadas Dinâmicas para Deneb (Power BI). Versão com cross-filtering e drillthrough. Cole este JSON no editor de especificação do Deneb.",
+
+  "config": {
+    "locale": {
+      "number": {
+        "decimal": ",",
+        "thousands": ".",
+        "grouping": [3],
+        "currency": ["R$ ", ""]
+      }
+    }
+  },
+
+  "signals": [
+    {
+      "name": "campoMes",
+      "value": "Ano_Mes_abrev",
+      "description": "Nome do campo de mês conforme configurado no painel de campos do Deneb."
+    },
+    {
+      "name": "campoPlan",
+      "value": "m_Plan",
+      "description": "Nome da medida Planejado conforme configurado no painel de campos do Deneb."
+    },
+    {
+      "name": "campoReal",
+      "value": "m_Real",
+      "description": "Nome da medida Realizado conforme configurado no painel de campos do Deneb."
+    },
+    {
+      "name": "campoProj",
+      "value": "m_Proj",
+      "description": "Nome da medida Projetado conforme configurado no painel de campos do Deneb."
+    },
+    {"name": "labelPlan",      "value": "Planejado"},
+    {"name": "labelReal",      "value": "Realizado"},
+    {"name": "labelProj",      "value": "Projetado"},
+    {"name": "corPlan",        "value": "#4472C4"},
+    {"name": "corReal",        "value": "#70AD47"},
+    {"name": "corProj",        "value": "#ED7D31"},
+    {"name": "paddingGrupo",   "value": 0.3},
+    {"name": "paddingBarra",   "value": 0.12},
+    {"name": "raioAresta",     "value": 3},
+    {"name": "mostrarRotulos", "value": true},
+    {"name": "tamanhoRotulo",  "value": 10},
+    {"name": "fontePadrao",    "value": "Segoe UI, sans-serif"},
+    {
+      "name": "selecaoAtiva",
+      "description": "Signal interno: true quando há alguma linha com __selected__ diferente de 'off'.",
+      "value": false,
+      "on": [
+        {
+          "events": {"source": "view", "type": "click"},
+          "update": "true"
+        }
+      ]
+    }
+  ],
+
+  "data": [
+    {
+      "name": "proc",
+      "description": "Normaliza nomes de campo. Fonte: 'dataset' (padrão Deneb). __row__ e __selected__ são preservados automaticamente.",
+      "source": "dataset",
+      "transform": [
+        {"type": "formula", "as": "_mes",  "expr": "datum[campoMes]"},
+        {"type": "formula", "as": "_plan", "expr": "datum[campoPlan]"},
+        {"type": "formula", "as": "_real", "expr": "datum[campoReal]"},
+        {"type": "formula", "as": "_proj", "expr": "datum[campoProj]"}
+      ]
+    },
+    {
+      "name": "bars_plan",
+      "source": "proc",
+      "transform": [
+        {"type": "formula", "as": "serie", "expr": "labelPlan"},
+        {"type": "formula", "as": "valor", "expr": "datum._plan"},
+        {"type": "formula", "as": "ordem", "expr": "0"}
+      ]
+    },
+    {
+      "name": "bars_real",
+      "source": "proc",
+      "transform": [
+        {"type": "filter",  "expr": "isValid(datum._real) && datum._real !== null"},
+        {"type": "formula", "as": "serie", "expr": "labelReal"},
+        {"type": "formula", "as": "valor", "expr": "datum._real"},
+        {"type": "formula", "as": "ordem", "expr": "1"}
+      ]
+    },
+    {
+      "name": "bars_proj",
+      "source": "proc",
+      "transform": [
+        {"type": "filter",  "expr": "isValid(datum._proj) && datum._proj !== null"},
+        {"type": "formula", "as": "serie", "expr": "labelProj"},
+        {"type": "formula", "as": "valor", "expr": "datum._proj"},
+        {"type": "formula", "as": "ordem", "expr": "1"}
+      ]
+    },
+    {
+      "name": "bars",
+      "source": ["bars_plan", "bars_real", "bars_proj"]
+    }
+  ],
+
+  "scales": [
+    {
+      "name": "xscale",
+      "type": "band",
+      "domain": {"data": "bars_plan", "field": "_mes"},
+      "range": "width",
+      "padding": {"signal": "paddingGrupo"}
+    },
+    {
+      "name": "xinner",
+      "type": "band",
+      "domain": [0, 1],
+      "range": {"signal": "[0, bandwidth('xscale')]"},
+      "padding": {"signal": "paddingBarra"}
+    },
+    {
+      "name": "yscale",
+      "type": "linear",
+      "domain": {"data": "bars", "field": "valor"},
+      "range": "height",
+      "nice": true,
+      "zero": true
+    },
+    {
+      "name": "color",
+      "type": "ordinal",
+      "domain": {"signal": "[labelPlan, labelReal, labelProj]"},
+      "range": {"signal": "[corPlan, corReal, corProj]"}
+    }
+  ],
+
+  "axes": [
+    {
+      "orient": "bottom",
+      "scale": "xscale",
+      "domain": false,
+      "ticks": false,
+      "labelPadding": 10,
+      "labelFont": "Segoe UI, sans-serif",
+      "labelFontSize": 11,
+      "labelColor": "#404040",
+      "labelAngle": -35,
+      "labelAlign": "right",
+      "labelBaseline": "middle",
+      "labelOverlap": false
+    },
+    {
+      "orient": "left",
+      "scale": "yscale",
+      "domain": false,
+      "ticks": false,
+      "tickCount": 5,
+      "grid": true,
+      "gridColor": "#e8e8e8",
+      "gridOpacity": 1,
+      "labelFont": "Segoe UI, sans-serif",
+      "labelFontSize": 11,
+      "labelColor": "#666666",
+      "format": "$,.0f",
+      "labelOverlap": "greedy"
+    }
+  ],
+
+  "legends": [
+    {
+      "fill": "color",
+      "orient": "bottom",
+      "direction": "horizontal",
+      "padding": 12,
+      "columnPadding": 24,
+      "symbolType": "square",
+      "symbolSize": 120,
+      "symbolStrokeWidth": 0,
+      "labelFont": "Segoe UI, sans-serif",
+      "labelFontSize": 12,
+      "labelColor": "#404040"
+    }
+  ],
+
+  "marks": [
+    {
+      "type": "group",
+      "from": {
+        "facet": {
+          "data": "bars",
+          "name": "bars_por_mes",
+          "groupby": "_mes"
+        }
+      },
+      "encode": {
+        "enter": {
+          "x":      {"scale": "xscale", "field": "_mes"},
+          "width":  {"signal": "bandwidth('xscale')"},
+          "height": {"signal": "height"},
+          "clip":   {"value": false}
+        }
+      },
+      "marks": [
+        {
+          "type": "rect",
+          "name": "barra",
+          "from": {"data": "bars_por_mes"},
+          "encode": {
+            "enter": {
+              "x":                    {"scale": "xinner", "field": "ordem"},
+              "width":                {"signal": "bandwidth('xinner')"},
+              "y":                    {"scale": "yscale", "field": "valor"},
+              "y2":                   {"scale": "yscale", "value": 0},
+              "fill":                 {"scale": "color",  "field": "serie"},
+              "cornerRadiusTopLeft":  {"signal": "raioAresta"},
+              "cornerRadiusTopRight": {"signal": "raioAresta"},
+              "tooltip": {
+                "signal": "{'Mês': datum._mes, 'Tipo': datum.serie, 'Valor': format(datum.valor, '$,.0f')}"
+              }
+            },
+            "update": {
+              "fillOpacity": [
+                {
+                  "test": "datum.__selected__ == 'off'",
+                  "value": 0.15
+                },
+                {"value": 1}
+              ],
+              "cursor": {"value": "pointer"}
+            },
+            "hover": {
+              "fillOpacity": [
+                {
+                  "test": "datum.__selected__ == 'off'",
+                  "value": 0.25
+                },
+                {"value": 0.75}
+              ]
+            }
+          },
+          "on": [
+            {
+              "events": "click",
+              "update": "pbiCrossFilterApply(event)"
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "name": "rotulo",
+          "from": {"data": "bars_por_mes"},
+          "encode": {
+            "enter": {
+              "x":          {"signal": "scale('xinner', datum.ordem) + bandwidth('xinner') / 2"},
+              "y":          {"scale": "yscale", "field": "valor", "offset": -5},
+              "align":      {"value": "center"},
+              "baseline":   {"value": "bottom"},
+              "font":       {"value": "Segoe UI, sans-serif"},
+              "fontSize":   {"signal": "tamanhoRotulo"},
+              "fontWeight": {"value": "600"},
+              "fill":       {"value": "#404040"},
+              "text":       {"signal": "mostrarRotulos ? format(datum.valor, '$,.0f') : ''"}
+            },
+            "update": {
+              "opacity": [
+                {
+                  "test": "datum.__selected__ == 'off'",
+                  "value": 0.15
+                },
+                {"value": 1}
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
