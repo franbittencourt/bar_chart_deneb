@@ -1,6 +1,6 @@
 {
   "$schema": "https://vega.github.io/schema/vega/v5.json",
-  "description": "Gráfico de Colunas Agrupadas Dinâmicas para Deneb (Power BI). Versão com cross-filtering e drillthrough. Cole este JSON no editor de especificação do Deneb.",
+  "description": "Colunas Agrupadas Dinâmicas para Deneb (Power BI). Toggle Mensal/Acumulado interno + cross-filtering.",
 
   "config": {
     "locale": {
@@ -14,45 +14,39 @@
   },
 
   "signals": [
-    {
-      "name": "campoMes",
-      "value": "Ano_Mes_abrev",
-      "description": "Nome do campo de mês conforme configurado no painel de campos do Deneb."
-    },
-    {
-      "name": "campoPlan",
-      "value": "m_Plan",
-      "description": "Nome da medida Planejado conforme configurado no painel de campos do Deneb."
-    },
-    {
-      "name": "campoReal",
-      "value": "m_Real",
-      "description": "Nome da medida Realizado conforme configurado no painel de campos do Deneb."
-    },
-    {
-      "name": "campoProj",
-      "value": "m_Proj",
-      "description": "Nome da medida Projetado conforme configurado no painel de campos do Deneb."
-    },
-    {"name": "labelPlan",      "value": "Planejado"},
-    {"name": "labelReal",      "value": "Realizado"},
-    {"name": "labelProj",      "value": "Projetado"},
-    {"name": "corPlan",        "value": "#4472C4"},
-    {"name": "corReal",        "value": "#70AD47"},
-    {"name": "corProj",        "value": "#ED7D31"},
+    {"name": "campoMes",  "value": "Ano_Mes_abrev"},
+    {"name": "campoPlan", "value": "m_Plan"},
+    {"name": "campoReal", "value": "m_Real"},
+    {"name": "campoProj", "value": "m_Proj"},
+    {"name": "labelPlan", "value": "Planejado"},
+    {"name": "labelReal", "value": "Realizado"},
+    {"name": "labelProj", "value": "Projetado"},
+    {"name": "corPlan",   "value": "#4472C4"},
+    {"name": "corReal",   "value": "#70AD47"},
+    {"name": "corProj",   "value": "#ED7D31"},
     {"name": "paddingGrupo",   "value": 0.3},
     {"name": "paddingBarra",   "value": 0.12},
     {"name": "raioAresta",     "value": 3},
     {"name": "mostrarRotulos", "value": true},
-    {"name": "tamanhoRotulo",  "value": 10},
+    {"name": "tamanhoRotulo",  "value": 9},
     {"name": "fontePadrao",    "value": "Segoe UI, sans-serif"},
+
     {
-      "name": "selecaoAtiva",
-      "description": "Signal interno: true quando há alguma linha com __selected__ diferente de 'off'.",
+      "name": "modoAcumulado",
       "value": false,
       "on": [
         {
-          "events": {"source": "view", "type": "click"},
+          "events": [
+            {"markname": "btn_mensal_rect", "type": "click"},
+            {"markname": "btn_mensal_txt",  "type": "click"}
+          ],
+          "update": "false"
+        },
+        {
+          "events": [
+            {"markname": "btn_acum_rect", "type": "click"},
+            {"markname": "btn_acum_txt",  "type": "click"}
+          ],
           "update": "true"
         }
       ]
@@ -62,13 +56,24 @@
   "data": [
     {
       "name": "proc",
-      "description": "Normaliza nomes de campo. Fonte: 'dataset' (padrão Deneb). __row__ e __selected__ são preservados automaticamente.",
       "source": "dataset",
       "transform": [
         {"type": "formula", "as": "_mes",  "expr": "datum[campoMes]"},
         {"type": "formula", "as": "_plan", "expr": "datum[campoPlan]"},
         {"type": "formula", "as": "_real", "expr": "datum[campoReal]"},
-        {"type": "formula", "as": "_proj", "expr": "datum[campoProj]"}
+        {"type": "formula", "as": "_proj", "expr": "datum[campoProj]"},
+        {
+          "type": "formula",
+          "as": "_exec",
+          "expr": "(isValid(datum[campoReal]) && datum[campoReal] !== null ? datum[campoReal] : 0) + (isValid(datum[campoProj]) && datum[campoProj] !== null ? datum[campoProj] : 0)"
+        },
+        {
+          "type": "window",
+          "ops": ["sum", "sum"],
+          "fields": ["_plan", "_exec"],
+          "as":     ["_plan_acum", "_exec_acum"],
+          "frame":  [null, 0]
+        }
       ]
     },
     {
@@ -76,7 +81,7 @@
       "source": "proc",
       "transform": [
         {"type": "formula", "as": "serie", "expr": "labelPlan"},
-        {"type": "formula", "as": "valor", "expr": "datum._plan"},
+        {"type": "formula", "as": "valor", "expr": "modoAcumulado ? datum._plan_acum : datum._plan"},
         {"type": "formula", "as": "ordem", "expr": "0"}
       ]
     },
@@ -86,7 +91,7 @@
       "transform": [
         {"type": "filter",  "expr": "isValid(datum._real) && datum._real !== null"},
         {"type": "formula", "as": "serie", "expr": "labelReal"},
-        {"type": "formula", "as": "valor", "expr": "datum._real"},
+        {"type": "formula", "as": "valor", "expr": "modoAcumulado ? datum._exec_acum : datum._real"},
         {"type": "formula", "as": "ordem", "expr": "1"}
       ]
     },
@@ -96,7 +101,7 @@
       "transform": [
         {"type": "filter",  "expr": "isValid(datum._proj) && datum._proj !== null"},
         {"type": "formula", "as": "serie", "expr": "labelProj"},
-        {"type": "formula", "as": "valor", "expr": "datum._proj"},
+        {"type": "formula", "as": "valor", "expr": "modoAcumulado ? datum._exec_acum : datum._proj"},
         {"type": "formula", "as": "ordem", "expr": "1"}
       ]
     },
@@ -188,6 +193,100 @@
   "marks": [
     {
       "type": "group",
+      "description": "Toggle Mensal / Acumulado — renderiza na área de padding superior.",
+      "encode": {
+        "enter": {
+          "x":      {"signal": "width - 162"},
+          "y":      {"value": -34},
+          "width":  {"value": 157},
+          "height": {"value": 24},
+          "clip":   {"value": false}
+        }
+      },
+      "marks": [
+        {
+          "type": "rect",
+          "encode": {
+            "enter": {
+              "x": {"value": 0}, "y": {"value": 0},
+              "width": {"value": 157}, "height": {"value": 24},
+              "cornerRadius": {"value": 12},
+              "fill": {"value": "#dde1e7"}
+            }
+          }
+        },
+        {
+          "type": "rect",
+          "encode": {
+            "update": {
+              "x":            {"signal": "modoAcumulado ? 79 : 0"},
+              "y":            {"value": 0},
+              "width":        {"value": 78},
+              "height":       {"value": 24},
+              "cornerRadius": {"value": 12},
+              "fill":         {"value": "#4472C4"}
+            }
+          }
+        },
+        {
+          "type": "text",
+          "name": "btn_mensal_txt",
+          "encode": {
+            "update": {
+              "x": {"value": 39}, "y": {"value": 12},
+              "align": {"value": "center"}, "baseline": {"value": "middle"},
+              "text": {"value": "Mensal"},
+              "fill": {"signal": "modoAcumulado ? '#666666' : '#ffffff'"},
+              "font": {"value": "Segoe UI, sans-serif"},
+              "fontSize": {"value": 11}, "fontWeight": {"value": "600"},
+              "cursor": {"value": "pointer"}
+            }
+          }
+        },
+        {
+          "type": "text",
+          "name": "btn_acum_txt",
+          "encode": {
+            "update": {
+              "x": {"value": 118}, "y": {"value": 12},
+              "align": {"value": "center"}, "baseline": {"value": "middle"},
+              "text": {"value": "Acumulado"},
+              "fill": {"signal": "modoAcumulado ? '#ffffff' : '#666666'"},
+              "font": {"value": "Segoe UI, sans-serif"},
+              "fontSize": {"value": 11}, "fontWeight": {"value": "600"},
+              "cursor": {"value": "pointer"}
+            }
+          }
+        },
+        {
+          "type": "rect",
+          "name": "btn_mensal_rect",
+          "encode": {
+            "enter": {
+              "x": {"value": 0}, "y": {"value": 0},
+              "width": {"value": 79}, "height": {"value": 24},
+              "fill": {"value": "#000000"}, "fillOpacity": {"value": 0.001},
+              "cursor": {"value": "pointer"}
+            }
+          }
+        },
+        {
+          "type": "rect",
+          "name": "btn_acum_rect",
+          "encode": {
+            "enter": {
+              "x": {"value": 79}, "y": {"value": 0},
+              "width": {"value": 78}, "height": {"value": 24},
+              "fill": {"value": "#000000"}, "fillOpacity": {"value": 0.001},
+              "cursor": {"value": "pointer"}
+            }
+          }
+        }
+      ]
+    },
+
+    {
+      "type": "group",
       "from": {
         "facet": {
           "data": "bars",
@@ -209,7 +308,7 @@
           "name": "barra",
           "from": {"data": "bars_por_mes"},
           "encode": {
-            "enter": {
+            "update": {
               "x":                    {"scale": "xinner", "field": "ordem"},
               "width":                {"signal": "bandwidth('xinner')"},
               "y":                    {"scale": "yscale", "field": "valor"},
@@ -217,43 +316,31 @@
               "fill":                 {"scale": "color",  "field": "serie"},
               "cornerRadiusTopLeft":  {"signal": "raioAresta"},
               "cornerRadiusTopRight": {"signal": "raioAresta"},
-              "tooltip": {
-                "signal": "{'Mês': datum._mes, 'Tipo': datum.serie, 'Valor': format(datum.valor, '$,.0f')}"
-              }
-            },
-            "update": {
               "fillOpacity": [
-                {
-                  "test": "datum.__selected__ == 'off'",
-                  "value": 0.15
-                },
+                {"test": "datum.__selected__ == 'off'", "value": 0.15},
                 {"value": 1}
               ],
-              "cursor": {"value": "pointer"}
+              "cursor": {"value": "pointer"},
+              "tooltip": {
+                "signal": "{'Mês': datum._mes, 'Tipo': datum.serie, 'Modo': modoAcumulado ? 'Acumulado' : 'Mensal', 'Valor': format(datum.valor, '$,.0f')}"
+              }
             },
             "hover": {
               "fillOpacity": [
-                {
-                  "test": "datum.__selected__ == 'off'",
-                  "value": 0.25
-                },
+                {"test": "datum.__selected__ == 'off'", "value": 0.25},
                 {"value": 0.75}
               ]
             }
           },
           "on": [
-            {
-              "events": "click",
-              "update": "pbiCrossFilterApply(event)"
-            }
+            {"events": "click", "update": "pbiCrossFilterApply(event)"}
           ]
         },
         {
           "type": "text",
-          "name": "rotulo",
           "from": {"data": "bars_por_mes"},
           "encode": {
-            "enter": {
+            "update": {
               "x":          {"signal": "scale('xinner', datum.ordem) + bandwidth('xinner') / 2"},
               "y":          {"scale": "yscale", "field": "valor", "offset": -5},
               "align":      {"value": "center"},
@@ -262,14 +349,11 @@
               "fontSize":   {"signal": "tamanhoRotulo"},
               "fontWeight": {"value": "600"},
               "fill":       {"value": "#404040"},
-              "text":       {"signal": "mostrarRotulos ? format(datum.valor, '$,.0f') : ''"}
-            },
-            "update": {
+              "text": {
+                "signal": "mostrarRotulos ? (datum.valor >= 1000000 ? 'R$' + format(datum.valor / 1000000, ',.1f') + 'M' : 'R$' + format(datum.valor / 1000, ',.0f') + 'K') : ''"
+              },
               "opacity": [
-                {
-                  "test": "datum.__selected__ == 'off'",
-                  "value": 0.15
-                },
+                {"test": "datum.__selected__ == 'off'", "value": 0.15},
                 {"value": 1}
               ]
             }

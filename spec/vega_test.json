@@ -1,9 +1,9 @@
 {
   "$schema": "https://vega.github.io/schema/vega/v5.json",
-  "description": "Gráfico de Colunas Agrupadas Dinâmicas — Planejado / Realizado / Projetado. Cada mês exibe exatamente duas barras, sem espaços reservados para medidas nulas. Testável no editor online: https://vega.github.io/editor/",
+  "description": "Gráfico de Colunas Agrupadas Dinâmicas — Planejado / Realizado / Projetado. Toggle Mensal / Acumulado interno. Testável em https://vega.github.io/editor/",
   "width": 820,
   "height": 360,
-  "padding": {"left": 10, "right": 10, "top": 30, "bottom": 20},
+  "padding": {"left": 10, "right": 10, "top": 38, "bottom": 20},
   "autosize": {"type": "fit", "contains": "padding"},
 
   "config": {
@@ -38,71 +38,46 @@
       "value": "m_Proj",
       "description": "Nome da medida Projetado no dataset."
     },
+    {"name": "labelPlan", "value": "Planejado"},
+    {"name": "labelReal", "value": "Realizado"},
+    {"name": "labelProj", "value": "Projetado"},
+    {"name": "corPlan",   "value": "#4472C4"},
+    {"name": "corReal",   "value": "#70AD47"},
+    {"name": "corProj",   "value": "#ED7D31"},
+    {"name": "paddingGrupo",   "value": 0.3},
+    {"name": "paddingBarra",   "value": 0.12},
+    {"name": "raioAresta",     "value": 3},
+    {"name": "mostrarRotulos", "value": true},
+    {"name": "tamanhoRotulo",  "value": 9},
+    {"name": "fontePadrao",    "value": "Segoe UI, sans-serif"},
+
     {
-      "name": "labelPlan",
-      "value": "Planejado",
-      "description": "Texto exibido na legenda e tooltip para a série Planejado."
-    },
-    {
-      "name": "labelReal",
-      "value": "Realizado",
-      "description": "Texto exibido na legenda e tooltip para a série Realizado."
-    },
-    {
-      "name": "labelProj",
-      "value": "Projetado",
-      "description": "Texto exibido na legenda e tooltip para a série Projetado."
-    },
-    {
-      "name": "corPlan",
-      "value": "#4472C4",
-      "description": "Cor da barra Planejado (azul padrão)."
-    },
-    {
-      "name": "corReal",
-      "value": "#70AD47",
-      "description": "Cor da barra Realizado (verde padrão)."
-    },
-    {
-      "name": "corProj",
-      "value": "#ED7D31",
-      "description": "Cor da barra Projetado (laranja padrão)."
-    },
-    {
-      "name": "paddingGrupo",
-      "value": 0.3,
-      "description": "Espaçamento proporcional entre grupos de meses (0 a 1)."
-    },
-    {
-      "name": "paddingBarra",
-      "value": 0.12,
-      "description": "Espaçamento proporcional entre as duas barras dentro de cada mês (0 a 1)."
-    },
-    {
-      "name": "raioAresta",
-      "value": 3,
-      "description": "Raio de arredondamento do topo das barras (px)."
-    },
-    {
-      "name": "mostrarRotulos",
-      "value": true,
-      "description": "true = exibe rótulos de valor acima de cada barra; false = apenas tooltip."
-    },
-    {
-      "name": "tamanhoRotulo",
-      "value": 9,
-      "description": "Tamanho da fonte dos rótulos de valor (px)."
-    },
-    {
-      "name": "fontePadrao",
-      "value": "Segoe UI, sans-serif"
+      "name": "modoAcumulado",
+      "value": false,
+      "description": "false = visão mensal (padrão); true = visão acumulada YTD. Alterado pelo toggle interno.",
+      "on": [
+        {
+          "events": [
+            {"markname": "btn_mensal_rect", "type": "click"},
+            {"markname": "btn_mensal_txt",  "type": "click"}
+          ],
+          "update": "false"
+        },
+        {
+          "events": [
+            {"markname": "btn_acum_rect", "type": "click"},
+            {"markname": "btn_acum_txt",  "type": "click"}
+          ],
+          "update": "true"
+        }
+      ]
     }
   ],
 
   "data": [
     {
       "name": "source",
-      "description": "Dataset de teste com 12 meses. No Deneb, este bloco é removido e o nome 'source' é trocado por 'dataset' nos demais datasets.",
+      "description": "Dataset de teste com 12 meses. No Deneb: remova este bloco e troque 'source' por 'dataset' no campo 'source' do dataset 'proc'.",
       "values": [
         {"Ano_Mes_abrev": "Jan/25", "m_Plan": 850000, "m_Real": 812000, "m_Proj": null},
         {"Ano_Mes_abrev": "Fev/25", "m_Plan": 850000, "m_Real": 896000, "m_Proj": null},
@@ -120,50 +95,62 @@
     },
     {
       "name": "proc",
-      "description": "Normaliza os nomes dos campos usando os sinais acima. Qualquer alteração de campo no Power BI precisa ser feita apenas nos signals, não aqui.",
+      "description": "Normaliza nomes de campo e computa valores acumulados. _exec é a soma (Real OU Proj) do mês — nunca ambos ao mesmo tempo. window cumsum calcula o acumulado YTD de Plan e de Exec.",
       "source": "source",
       "transform": [
         {"type": "formula", "as": "_mes",  "expr": "datum[campoMes]"},
         {"type": "formula", "as": "_plan", "expr": "datum[campoPlan]"},
         {"type": "formula", "as": "_real", "expr": "datum[campoReal]"},
-        {"type": "formula", "as": "_proj", "expr": "datum[campoProj]"}
+        {"type": "formula", "as": "_proj", "expr": "datum[campoProj]"},
+        {
+          "type": "formula",
+          "as": "_exec",
+          "expr": "(isValid(datum[campoReal]) && datum[campoReal] !== null ? datum[campoReal] : 0) + (isValid(datum[campoProj]) && datum[campoProj] !== null ? datum[campoProj] : 0)"
+        },
+        {
+          "type": "window",
+          "ops": ["sum", "sum"],
+          "fields": ["_plan", "_exec"],
+          "as":     ["_plan_acum", "_exec_acum"],
+          "frame":  [null, 0]
+        }
       ]
     },
     {
       "name": "bars_plan",
-      "description": "Barra Planejado: sempre presente em todo mês. Ocupa a posição interna 0 (esquerda) dentro do grupo.",
+      "description": "Barra Planejado — sempre presente (ordem 0). No modo acumulado usa _plan_acum; no mensal usa _plan.",
       "source": "proc",
       "transform": [
         {"type": "formula", "as": "serie", "expr": "labelPlan"},
-        {"type": "formula", "as": "valor", "expr": "datum._plan"},
+        {"type": "formula", "as": "valor", "expr": "modoAcumulado ? datum._plan_acum : datum._plan"},
         {"type": "formula", "as": "ordem", "expr": "0"}
       ]
     },
     {
       "name": "bars_real",
-      "description": "Barra Realizado: filtrada — só existe nos meses em que m_Real não é nulo (antes/no mês de referência). Ocupa a posição interna 1 (direita).",
+      "description": "Barra Realizado — filtrada para meses onde m_Real existe (ordem 1). No modo acumulado usa _exec_acum (soma de Real+Proj até este mês).",
       "source": "proc",
       "transform": [
         {"type": "filter",  "expr": "isValid(datum._real) && datum._real !== null"},
         {"type": "formula", "as": "serie", "expr": "labelReal"},
-        {"type": "formula", "as": "valor", "expr": "datum._real"},
+        {"type": "formula", "as": "valor", "expr": "modoAcumulado ? datum._exec_acum : datum._real"},
         {"type": "formula", "as": "ordem", "expr": "1"}
       ]
     },
     {
       "name": "bars_proj",
-      "description": "Barra Projetado: filtrada — só existe nos meses em que m_Proj não é nulo (após o mês de referência). Ocupa a posição interna 1 (direita), sem conflito com Realizado.",
+      "description": "Barra Projetado — filtrada para meses onde m_Proj existe (ordem 1). No modo acumulado usa _exec_acum (soma de Real+Proj até este mês).",
       "source": "proc",
       "transform": [
         {"type": "filter",  "expr": "isValid(datum._proj) && datum._proj !== null"},
         {"type": "formula", "as": "serie", "expr": "labelProj"},
-        {"type": "formula", "as": "valor", "expr": "datum._proj"},
+        {"type": "formula", "as": "valor", "expr": "modoAcumulado ? datum._exec_acum : datum._proj"},
         {"type": "formula", "as": "ordem", "expr": "1"}
       ]
     },
     {
       "name": "bars",
-      "description": "Formato longo final: união das três séries filtradas. Cada mês tem exatamente 2 entradas. Nenhum espaço reservado para nulos.",
+      "description": "Formato longo final: 2 entradas por mês. Valores dependem do signal modoAcumulado.",
       "source": ["bars_plan", "bars_real", "bars_proj"]
     }
   ],
@@ -171,7 +158,6 @@
   "scales": [
     {
       "name": "xscale",
-      "description": "Escala de banda externa: posiciona cada grupo (mês) no eixo X. Ordem preservada do dataset original.",
       "type": "band",
       "domain": {"data": "bars_plan", "field": "_mes"},
       "range": "width",
@@ -179,7 +165,6 @@
     },
     {
       "name": "xinner",
-      "description": "Escala de banda interna: posiciona as duas barras (ordem 0 e 1) dentro da largura de cada grupo. Range dinâmico via bandwidth('xscale').",
       "type": "band",
       "domain": [0, 1],
       "range": {"signal": "[0, bandwidth('xscale')]"},
@@ -187,6 +172,7 @@
     },
     {
       "name": "yscale",
+      "description": "Escala linear que adapta automaticamente ao range dos valores (mensal ou acumulado).",
       "type": "linear",
       "domain": {"data": "bars", "field": "valor"},
       "range": "height",
@@ -195,7 +181,6 @@
     },
     {
       "name": "color",
-      "description": "Escala de cor ordinal com as 3 séries fixas na legenda, independentemente de quais séries aparecem em cada mês.",
       "type": "ordinal",
       "domain": {"signal": "[labelPlan, labelReal, labelProj]"},
       "range": {"signal": "[corPlan, corReal, corProj]"}
@@ -253,7 +238,113 @@
   "marks": [
     {
       "type": "group",
-      "description": "Grupo de marcas por mês (facet). Cada grupo recebe exatamente 2 barras do dataset 'bars'.",
+      "description": "Toggle Mensal / Acumulado — posicionado na área de padding superior (y negativo). Cliques atualizam o signal modoAcumulado.",
+      "encode": {
+        "enter": {
+          "x":      {"signal": "width - 162"},
+          "y":      {"value": -34},
+          "width":  {"value": 157},
+          "height": {"value": 24},
+          "clip":   {"value": false}
+        }
+      },
+      "marks": [
+        {
+          "type": "rect",
+          "description": "Fundo pill do toggle.",
+          "encode": {
+            "enter": {
+              "x": {"value": 0}, "y": {"value": 0},
+              "width": {"value": 157}, "height": {"value": 24},
+              "cornerRadius": {"value": 12},
+              "fill": {"value": "#dde1e7"}
+            }
+          }
+        },
+        {
+          "type": "rect",
+          "description": "Indicador deslizante: move para a direita quando modoAcumulado=true.",
+          "encode": {
+            "update": {
+              "x":            {"signal": "modoAcumulado ? 79 : 0"},
+              "y":            {"value": 0},
+              "width":        {"value": 78},
+              "height":       {"value": 24},
+              "cornerRadius": {"value": 12},
+              "fill":         {"value": "#4472C4"}
+            }
+          }
+        },
+        {
+          "type": "text",
+          "name": "btn_mensal_txt",
+          "description": "Label 'Mensal' — também é área de clique.",
+          "encode": {
+            "update": {
+              "x":          {"value": 39},
+              "y":          {"value": 12},
+              "align":      {"value": "center"},
+              "baseline":   {"value": "middle"},
+              "text":       {"value": "Mensal"},
+              "fill":       {"signal": "modoAcumulado ? '#666666' : '#ffffff'"},
+              "font":       {"value": "Segoe UI, sans-serif"},
+              "fontSize":   {"value": 11},
+              "fontWeight": {"value": "600"},
+              "cursor":     {"value": "pointer"}
+            }
+          }
+        },
+        {
+          "type": "text",
+          "name": "btn_acum_txt",
+          "description": "Label 'Acumulado' — também é área de clique.",
+          "encode": {
+            "update": {
+              "x":          {"value": 118},
+              "y":          {"value": 12},
+              "align":      {"value": "center"},
+              "baseline":   {"value": "middle"},
+              "text":       {"value": "Acumulado"},
+              "fill":       {"signal": "modoAcumulado ? '#ffffff' : '#666666'"},
+              "font":       {"value": "Segoe UI, sans-serif"},
+              "fontSize":   {"value": 11},
+              "fontWeight": {"value": "600"},
+              "cursor":     {"value": "pointer"}
+            }
+          }
+        },
+        {
+          "type": "rect",
+          "name": "btn_mensal_rect",
+          "description": "Área de clique invisível sobre o lado esquerdo (Mensal).",
+          "encode": {
+            "enter": {
+              "x": {"value": 0}, "y": {"value": 0},
+              "width": {"value": 79}, "height": {"value": 24},
+              "fill": {"value": "#000000"}, "fillOpacity": {"value": 0.001},
+              "cursor": {"value": "pointer"}
+            }
+          }
+        },
+        {
+          "type": "rect",
+          "name": "btn_acum_rect",
+          "description": "Área de clique invisível sobre o lado direito (Acumulado).",
+          "encode": {
+            "enter": {
+              "x": {"value": 79}, "y": {"value": 0},
+              "width": {"value": 78}, "height": {"value": 24},
+              "fill": {"value": "#000000"}, "fillOpacity": {"value": 0.001},
+              "cursor": {"value": "pointer"}
+            }
+          }
+        }
+      ]
+    },
+
+    {
+      "type": "group",
+      "description": "Facet por mês — cada grupo contém exatamente 2 barras. Valores reativos ao signal modoAcumulado.",
       "from": {
         "facet": {
           "data": "bars",
@@ -273,10 +364,9 @@
         {
           "type": "rect",
           "name": "barra",
-          "description": "Barra individual. A posição X usa a escala interna (xinner) com o campo 'ordem' (0 ou 1). Nunca reserva espaço para valores nulos.",
           "from": {"data": "bars_por_mes"},
           "encode": {
-            "enter": {
+            "update": {
               "x":                    {"scale": "xinner", "field": "ordem"},
               "width":                {"signal": "bandwidth('xinner')"},
               "y":                    {"scale": "yscale", "field": "valor"},
@@ -284,12 +374,10 @@
               "fill":                 {"scale": "color",  "field": "serie"},
               "cornerRadiusTopLeft":  {"signal": "raioAresta"},
               "cornerRadiusTopRight": {"signal": "raioAresta"},
+              "fillOpacity":          {"value": 1},
               "tooltip": {
-                "signal": "{'Mês': datum._mes, 'Tipo': datum.serie, 'Valor': format(datum.valor, '$,.0f')}"
+                "signal": "{'Mês': datum._mes, 'Tipo': datum.serie, 'Modo': modoAcumulado ? 'Acumulado' : 'Mensal', 'Valor': format(datum.valor, '$,.0f')}"
               }
-            },
-            "update": {
-              "fillOpacity": {"value": 1}
             },
             "hover": {
               "fillOpacity": {"value": 0.7},
@@ -300,10 +388,9 @@
         {
           "type": "text",
           "name": "rotulo",
-          "description": "Rótulo de valor acima da barra. Controlado pelo signal 'mostrarRotulos'. Centralizado na barra usando bandwidth('xinner').",
           "from": {"data": "bars_por_mes"},
           "encode": {
-            "enter": {
+            "update": {
               "x":        {"signal": "scale('xinner', datum.ordem) + bandwidth('xinner') / 2"},
               "y":        {"scale": "yscale", "field": "valor", "offset": -5},
               "align":    {"value": "center"},
@@ -312,7 +399,9 @@
               "fontSize": {"signal": "tamanhoRotulo"},
               "fontWeight": {"value": "600"},
               "fill":     {"value": "#404040"},
-              "text":     {"signal": "mostrarRotulos ? 'R$' + format(datum.valor / 1000, ',.0f') + 'K' : ''"}
+              "text": {
+                "signal": "mostrarRotulos ? (datum.valor >= 1000000 ? 'R$' + format(datum.valor / 1000000, ',.1f') + 'M' : 'R$' + format(datum.valor / 1000, ',.0f') + 'K') : ''"
+              }
             }
           }
         }
