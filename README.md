@@ -2,9 +2,13 @@
 
 Visual Vega para o Deneb (Power BI) que resolve o problema de espaços reservados para medidas nulas no gráfico nativo de colunas agrupadas.
 
-## Screenshot
+## Screenshots
 
-![Gráfico de Colunas Agrupadas Dinâmicas](preview/screenshot.png)
+### Visão Mensal
+![Visão Mensal](preview/screenshot.png)
+
+### Visão Acumulada (YTD)
+![Visão Acumulada](preview/screenshot_acumulado.png)
 
 ## O Problema
 
@@ -28,6 +32,21 @@ Julho   → { serie: "Planejado", valor: 850000, ordem: 0 }
 ```
 
 A posição da segunda barra é calculada dinamicamente pela escala interna (`xinner`), garantindo largura e espaçamento constantes em todos os meses.
+
+## Toggle Mensal / Acumulado
+
+O visual inclui um botão segmentado interno (sem depender de slicers do Power BI) que alterna entre duas visões:
+
+| Modo | Planejado | Realizado / Projetado |
+|---|---|---|
+| **Mensal** | Valor do mês | Valor do mês (Real ou Proj) |
+| **Acumulado** | `cumsum(Planejado)` | `cumsum(Real + Proj)` YTD |
+
+**Lógica do acumulado:**
+- `_exec = Real OU Proj` por mês (nunca ambos ao mesmo tempo)  
+- `_exec_acum = window cumsum(_exec)` → acumula a performance real/projetada ao longo do ano
+- As cores se mantêm: verde para meses já realizados, laranja para meses projetados
+- Os rótulos auto-escalam: `K` para valores < 1M, `M` para valores ≥ 1M
 
 ---
 
@@ -101,6 +120,7 @@ Edite os `signals` no topo do spec para refletir os nomes exatos dos campos no s
 | `raioAresta` | `3` | Arredondamento do topo das barras (px) |
 | `mostrarRotulos` | `true` | Exibe rótulos de valor nas barras |
 | `tamanhoRotulo` | `9` | Tamanho da fonte dos rótulos (px) |
+| `modoAcumulado` | `false` | Toggle interno: `false` = mensal, `true` = acumulado YTD |
 
 ---
 
