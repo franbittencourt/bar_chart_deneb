@@ -33,6 +33,17 @@
     {"name": "alturaHeader",   "value": 44},
 
     {
+      "name": "_crossFilter",
+      "value": null,
+      "on": [
+        {
+          "events": {"markname": "barra", "type": "click"},
+          "update": "pbiCrossFilterApply(event)"
+        }
+      ]
+    },
+
+    {
       "name": "modoAcumulado",
       "value": false,
       "on": [
@@ -55,6 +66,9 @@
   ],
 
   "data": [
+    {
+      "name": "dataset"
+    },
     {
       "name": "proc",
       "source": "dataset",
@@ -332,10 +346,7 @@
                 {"value": 0.75}
               ]
             }
-          },
-          "on": [
-            {"events": "click", "update": "pbiCrossFilterApply(event)"}
-          ]
+          }
         },
         {
           "type": "text",
