@@ -37,7 +37,10 @@
       "value": null,
       "on": [
         {
-          "events": {"markname": "barra", "type": "click"},
+          "events": [
+            {"markname": "barra",  "type": "click"},
+            {"markname": "rotulo", "type": "click"}
+          ],
           "update": "pbiCrossFilterApply(event)"
         }
       ]
@@ -350,6 +353,7 @@
         },
         {
           "type": "text",
+          "name": "rotulo",
           "from": {"data": "bars_por_mes"},
           "encode": {
             "update": {
@@ -361,6 +365,7 @@
               "fontSize":   {"signal": "tamanhoRotulo"},
               "fontWeight": {"value": "600"},
               "fill":       {"value": "#404040"},
+              "cursor":     {"value": "pointer"},
               "text": {
                 "signal": "mostrarRotulos ? (datum.valor >= 1000000 ? 'R$' + format(datum.valor / 1000000, ',.1f') + 'M' : 'R$' + format(datum.valor / 1000, ',.0f') + 'K') : ''"
               },
