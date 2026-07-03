@@ -34,6 +34,7 @@
 
     {
       "name": "_crossFilter",
+      "description": "Cross-filter de saída. Requer modo Advanced habilitado nas configurações do Deneb (Interatividade > Habilitar seleção > Avançado). Constrói a expressão de filtro explicitamente pois os dados são derivados (união + filtros) e o modo simples não consegue resolver a identidade da linha original.",
       "value": null,
       "on": [
         {
@@ -41,7 +42,7 @@
             {"markname": "barra",  "type": "click"},
             {"markname": "rotulo", "type": "click"}
           ],
-          "update": "pbiCrossFilterApply(event)"
+          "update": "pbiCrossFilterApply(event, \"datum['\" + campoMes + \"'] == '\" + datum._mes + \"'\")"
         }
       ]
     },
