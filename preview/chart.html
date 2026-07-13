@@ -177,7 +177,17 @@
         },
         {
           "name": "bars",
-          "source": ["bars_plan", "bars_real", "bars_proj"]
+          "source": ["bars_plan", "bars_real", "bars_proj"],
+          "transform": [
+            {
+              "type": "joinaggregate",
+              "groupby": ["_mes"],
+              "ops": ["sum", "count"],
+              "fields": ["valor", "valor"],
+              "as": ["_soma_mes", "_n_mes"]
+            },
+            {"type": "formula", "as": "_valor_irmao", "expr": "datum._soma_mes - datum.valor"}
+          ]
         }
       ],
 
@@ -402,13 +412,17 @@
               "encode": {
                 "update": {
                   "x":          {"signal": "scale('xinner', datum.ordem) + bandwidth('xinner') / 2"},
-                  "y":          {"scale": "yscale", "field": "valor", "offset": -5},
+                  "y": {
+                    "signal": "datum.ordem == 1 && datum._n_mes == 2 && abs(scale('yscale', datum.valor) - scale('yscale', datum._valor_irmao)) < tamanhoRotulo + 4 ? ((scale('yscale', 0) - scale('yscale', datum.valor)) > tamanhoRotulo + 12 ? scale('yscale', datum.valor) + tamanhoRotulo + 5 : min(scale('yscale', datum.valor), scale('yscale', datum._valor_irmao)) - tamanhoRotulo - 7) : scale('yscale', datum.valor) - 5"
+                  },
                   "align":      {"value": "center"},
                   "baseline":   {"value": "bottom"},
                   "font":       {"value": "Segoe UI, sans-serif"},
                   "fontSize":   {"signal": "tamanhoRotulo"},
                   "fontWeight": {"value": "600"},
-                  "fill":       {"value": "#404040"},
+                  "fill": {
+                    "signal": "datum.ordem == 1 && datum._n_mes == 2 && abs(scale('yscale', datum.valor) - scale('yscale', datum._valor_irmao)) < tamanhoRotulo + 4 && (scale('yscale', 0) - scale('yscale', datum.valor)) > tamanhoRotulo + 12 ? '#ffffff' : '#404040'"
+                  },
                   "text": {
                     "signal": "mostrarRotulos ? (datum.valor >= 10000000 ? format(datum.valor / 1000000, ',.0f') + 'M' : (datum.valor >= 1000000 ? format(datum.valor / 1000000, ',.1f') + 'M' : format(datum.valor / 1000, ',.0f') + 'K')) : ''"
                   }
